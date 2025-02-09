@@ -1,0 +1,47 @@
+# Source code
+src/
+
+# Build
+dist/*.map
+
+# Development files
+tsconfig.json
+vitest.config.*
+rollup.config.*
+commitlint.config.*
+eslint.config.*
+.editorconfig
+
+# Tests
+**/__tests__/
+**/tests/
+coverage/
+*.test.ts
+*.spec.ts
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# CI/CD
+.github/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Development
+node_modules/
+pnpm-lock.yaml
