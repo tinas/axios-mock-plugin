@@ -1,6 +1,7 @@
 import { AxiosHeaders } from 'axios'
 import { AxiosMocker } from '../src/axios-mocker'
 import { isDevelopment } from '../src/utils/env'
+import { AxiosRequestConfigWithMock } from '../src/types'
 
 vi.mock('../src/utils/env', () => ({
   isDevelopment: vi.fn()
@@ -249,6 +250,32 @@ describe('AxiosMocker class', () => {
       expect(axiosMocker['preHooks']).toEqual([preHook])
     })
 
+    it('should modify the request via a preHook override', async() => {
+      const mocker = new AxiosMocker({
+        endpoints: {
+          'GET /test': (req) => {
+            return { modified: req.params.customProperty == 'overridden' }
+          },
+        },
+        config: { enabled: true, delay: 0 },
+      })
+
+      mocker.addPreHook((request) => {
+        request.params.customProperty = 'overridden'
+      })
+
+      const config = {
+        headers: new AxiosHeaders(),
+        method: 'GET',
+        url: '/test',
+        mock: true,
+      }
+
+      const response = await mocker.handleRequest(config)
+
+      expect(response.data).toEqual({ modified: true })
+    })
+
     it('should add post-hook', () => {
       const axiosMocker = new AxiosMocker()
 
@@ -256,6 +283,31 @@ describe('AxiosMocker class', () => {
       axiosMocker.addPostHook(postHook)
 
       expect(axiosMocker['postHooks']).toEqual([postHook])
+    })
+
+    it('should modify the response via a postHook override', async() => {
+      const mocker = new AxiosMocker({
+        endpoints: {
+          'GET /test': () => {
+            return { message: 'original' }
+          },
+        },
+        config: { enabled: true, delay: 0 },
+      })
+
+      mocker.addPostHook((response) => {
+        response.data.modifiedPost = 'overridden'
+      })
+
+      const config = {
+        headers: new AxiosHeaders(),
+        method: 'GET',
+        url: '/test',
+        mock: true,
+      }
+
+      const response = await mocker.handleRequest(config)
+      expect(response.data).toEqual({ message: 'original', modifiedPost: 'overridden' })
     })
   })
 
@@ -621,6 +673,90 @@ describe('AxiosMocker class', () => {
           expect(response.data).toEqual(expectedData)
         })
       })
+    })
+  })
+
+  describe('Edge Cases', () => {
+    let mocker: AxiosMocker
+    let config: AxiosRequestConfigWithMock
+
+    beforeEach(() => {
+      mocker = new AxiosMocker({
+        endpoints: {
+          'GET /test': () => {
+            return { success: true }
+          },
+        },
+        config: { enabled: true, delay: 0 },
+      })
+
+      config = {
+        headers: new AxiosHeaders(),
+        method: 'GET',
+        url: '/test',
+        mock: true,
+      }
+    })
+
+    afterEach(() => {
+      vi.restoreAllMocks()
+    })
+
+    it('should wrap a synchronous return value in a promise and return the correct response', async() => {
+      const mocker = new AxiosMocker({
+        endpoints: new Map([
+          ['GET /api/users', () => ({ data: ['value1', 'value2'] })]
+        ]),
+        config: { enabled: true, delay: 0 }
+      })
+
+      const config = {
+        headers: new AxiosHeaders(),
+        method: 'GET',
+        url: '/api/users',
+        mock: true,
+      }
+
+      const response = await mocker.handleRequest(config)
+
+      expect(response.status).toEqual(200)
+      expect(response.data).toEqual({ data: ['value1', 'value2'] })
+    })
+
+    it('should throw an error if a pre-hook fails', async() => {
+      mocker.addPreHook(() => {
+        throw new Error('Pre-hook error')
+      })
+
+      await expect(mocker.handleRequest(config))
+        .rejects.toThrow('Pre-hook error')
+    })
+
+    it('should throw an error if a post-hook fails', async() => {
+      mocker.addPostHook(() => {
+        throw new Error('Post-hook error')
+      })
+
+      await expect(mocker.handleRequest(config))
+        .rejects.toThrow('Post-hook error')
+    })
+
+    it('should not throw a random error when errorRate is 0', async() => {
+      mocker.updateConfig({ errorRate: 0 })
+      const response = await mocker.handleRequest(config)
+      expect(response.status).toEqual(200)
+      expect(response.data).toEqual({ success: true })
+    })
+
+    it('should throw an error if no endpoint matches the request', async() => {
+      const noMatchConfig: AxiosRequestConfigWithMock = {
+        headers: new AxiosHeaders(),
+        method: 'GET',
+        url: '/non-existent',
+        mock: true,
+      }
+      await expect(mocker.handleRequest(noMatchConfig))
+        .rejects.toThrow('[axios-mock-plugin] No mock endpoint found for "GET /non-existent"')
     })
   })
 })
