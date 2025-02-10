@@ -3,6 +3,17 @@
   "type": "module",
   "version": "0.1.0",
   "description": "A plugin for axios to mock requests.",
+  "keywords": [
+    "axios",
+    "mock",
+    "testing",
+    "http",
+    "api",
+    "interceptor",
+    "typescript",
+    "frontend",
+    "development"
+  ],
   "main": "dist/index.cjs.js",
   "module": "dist/index.esm.js",
   "types": "dist/index.d.ts",
