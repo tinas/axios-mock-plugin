@@ -8,8 +8,8 @@ import {
   EndpointsMap,
   MockRequest,
   NormalizedMockConfig,
-  PreHook,
-  PostHook,
+  RequestHook,
+  ResponseHook,
   AxiosMockerOptions
 } from './types'
 
@@ -20,14 +20,14 @@ import { isDevelopment } from './utils/env'
 export class AxiosMocker {
   private config: NormalizedMockConfig
   private endpoints: Map<string, MockEndpoint>
-  private preHooks: Array<PreHook>
-  private postHooks: Array<PostHook>
+  private requestHooks: Array<RequestHook>
+  private responseHooks: Array<ResponseHook>
 
   constructor(options?: AxiosMockerOptions) {
     this.config = normalizeMockConfig(options?.config)
     this.endpoints = new Map<string, MockEndpoint>()
-    this.preHooks = []
-    this.postHooks = []
+    this.requestHooks = []
+    this.responseHooks = []
     this.loadEndpoints(options?.endpoints)
   }
 
@@ -82,12 +82,12 @@ export class AxiosMocker {
     this.config = normalizeMockConfig(config)
   }
 
-  public addPreHook(hook: (request: MockRequest) => void | Promise<void>): void {
-    this.preHooks.push(hook)
+  public addRequestHook(hook: (request: MockRequest) => void | Promise<void>): void {
+    this.requestHooks.push(hook)
   }
 
-  public addPostHook(hook: (res: AxiosResponse) => void | Promise<void>): void {
-    this.postHooks.push(hook)
+  public addResponseHook(hook: (response: AxiosResponse) => void | Promise<void>): void {
+    this.responseHooks.push(hook)
   }
 
   public async handleRequest(axiosConfig: AxiosRequestConfigWithMock): Promise<AxiosResponse> {
@@ -158,7 +158,7 @@ export class AxiosMocker {
       )
     }
 
-    for (const hook of this.preHooks) {
+    for (const hook of this.requestHooks) {
       await hook(mockRequest, axiosConfig)
     }
 
@@ -179,7 +179,7 @@ export class AxiosMocker {
       config: axiosConfig
     }
 
-    for (const hook of this.postHooks) {
+    for (const hook of this.responseHooks) {
       await hook(response, axiosConfig)
     }
 

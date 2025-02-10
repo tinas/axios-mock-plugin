@@ -25,8 +25,8 @@ describe('AxiosMocker class', () => {
 
       expect(axiosMocker).toBeDefined()
       expect(axiosMocker.listEndpoints()).toEqual([])
-      expect(axiosMocker['preHooks']).toEqual([])
-      expect(axiosMocker['postHooks']).toEqual([])
+      expect(axiosMocker['requestHooks']).toEqual([])
+      expect(axiosMocker['responseHooks']).toEqual([])
       expect(axiosMocker['config']).toEqual({
         enabled: true,
         delay: 0,
@@ -54,8 +54,8 @@ describe('AxiosMocker class', () => {
 
       expect(axiosMocker).toBeDefined()
       expect(axiosMocker.listEndpoints()).toEqual(['GET /api/users'])
-      expect(axiosMocker['preHooks']).toEqual([])
-      expect(axiosMocker['postHooks']).toEqual([])
+      expect(axiosMocker['requestHooks']).toEqual([])
+      expect(axiosMocker['responseHooks']).toEqual([])
       expect(axiosMocker['config']).toEqual({
         enabled: false,
         delay: 1000,
@@ -241,16 +241,16 @@ describe('AxiosMocker class', () => {
       })
     })
 
-    it('should add pre-hook', () => {
+    it('should add request-hook', () => {
       const axiosMocker = new AxiosMocker()
 
       const preHook = () => { }
-      axiosMocker.addPreHook(preHook)
+      axiosMocker.addRequestHook(preHook)
 
-      expect(axiosMocker['preHooks']).toEqual([preHook])
+      expect(axiosMocker['requestHooks']).toEqual([preHook])
     })
 
-    it('should modify the request via a preHook override', async() => {
+    it('should modify the request via a request-hook override', async() => {
       const mocker = new AxiosMocker({
         endpoints: {
           'GET /test': (req) => {
@@ -260,7 +260,7 @@ describe('AxiosMocker class', () => {
         config: { enabled: true, delay: 0 },
       })
 
-      mocker.addPreHook((request) => {
+      mocker.addRequestHook((request) => {
         request.params.customProperty = 'overridden'
       })
 
@@ -276,16 +276,16 @@ describe('AxiosMocker class', () => {
       expect(response.data).toEqual({ modified: true })
     })
 
-    it('should add post-hook', () => {
+    it('should add response-hook', () => {
       const axiosMocker = new AxiosMocker()
 
       const postHook = () => { }
-      axiosMocker.addPostHook(postHook)
+      axiosMocker.addResponseHook(postHook)
 
-      expect(axiosMocker['postHooks']).toEqual([postHook])
+      expect(axiosMocker['responseHooks']).toEqual([postHook])
     })
 
-    it('should modify the response via a postHook override', async() => {
+    it('should modify the response via a response-hook override', async() => {
       const mocker = new AxiosMocker({
         endpoints: {
           'GET /test': () => {
@@ -295,7 +295,7 @@ describe('AxiosMocker class', () => {
         config: { enabled: true, delay: 0 },
       })
 
-      mocker.addPostHook((response) => {
+      mocker.addResponseHook((response) => {
         response.data.modifiedPost = 'overridden'
       })
 
@@ -568,8 +568,8 @@ describe('AxiosMocker class', () => {
       )
     })
 
-    it('should call pre-hook', async() => {
-      const preHook = vi.fn()
+    it('should call request-hook', async() => {
+      const hook = vi.fn()
       const config = getDefaultAxiosConfig()
       config.url = '/api/users'
       const axiosMocker = new AxiosMocker({
@@ -578,14 +578,14 @@ describe('AxiosMocker class', () => {
         ])
       })
 
-      axiosMocker.addPreHook(preHook)
+      axiosMocker.addRequestHook(hook)
       await axiosMocker.handleRequest(config)
 
-      expect(preHook).toHaveBeenCalled()
+      expect(hook).toHaveBeenCalled()
     })
 
     it('should call post-hook', async() => {
-      const postHook = vi.fn()
+      const hook = vi.fn()
       const config = getDefaultAxiosConfig()
       config.url = '/api/users'
       const axiosMocker = new AxiosMocker({
@@ -594,10 +594,10 @@ describe('AxiosMocker class', () => {
         ])
       })
 
-      axiosMocker.addPostHook(postHook)
+      axiosMocker.addResponseHook(hook)
       await axiosMocker.handleRequest(config)
 
-      expect(postHook).toHaveBeenCalled()
+      expect(hook).toHaveBeenCalled()
     })
 
     it('should throw error if handler failed', async() => {
@@ -723,8 +723,8 @@ describe('AxiosMocker class', () => {
       expect(response.data).toEqual({ data: ['value1', 'value2'] })
     })
 
-    it('should throw an error if a pre-hook fails', async() => {
-      mocker.addPreHook(() => {
+    it('should throw an error if a request-hook fails', async() => {
+      mocker.addRequestHook(() => {
         throw new Error('Pre-hook error')
       })
 
@@ -732,8 +732,8 @@ describe('AxiosMocker class', () => {
         .rejects.toThrow('Pre-hook error')
     })
 
-    it('should throw an error if a post-hook fails', async() => {
-      mocker.addPostHook(() => {
+    it('should throw an error if a response-hook fails', async() => {
+      mocker.addResponseHook(() => {
         throw new Error('Post-hook error')
       })
 

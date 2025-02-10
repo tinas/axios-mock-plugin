@@ -50,12 +50,12 @@ export type MockEndpoint<
 
 export type EndpointsMap = Map<string, MockEndpoint> | { [key: string]: MockEndpoint }
 
-export type PreHook = (
+export type RequestHook = (
   request: MockRequest,
   axiosConfig: AxiosRequestConfigWithMock
 ) => void | Promise<void>
 
-export type PostHook = (
+export type ResponseHook = (
   response: AxiosResponse,
   axiosConfig: AxiosRequestConfigWithMock
 ) => void | Promise<void>

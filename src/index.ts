@@ -5,8 +5,8 @@ export {
   MockRequest,
   MockEndpoint,
   EndpointsMap,
-  PreHook,
-  PostHook
+  RequestHook,
+  ResponseHook
 } from './types'
 
 export { AxiosMocker } from './axios-mocker'
