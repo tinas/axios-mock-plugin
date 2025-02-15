@@ -1,8 +1,8 @@
 {
   "name": "axios-mock-plugin",
   "type": "module",
-  "version": "0.1.0",
-  "description": "A plugin for axios to mock requests.",
+  "version": "0.2.0",
+  "description": "Promise based mock adapter for axios.",
   "keywords": [
     "axios",
     "mock",
