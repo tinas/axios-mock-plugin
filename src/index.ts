@@ -24,4 +24,4 @@ export {
 
 export {
   mergeOptions
-} from './utils/normalize-config'
+} from './utils'

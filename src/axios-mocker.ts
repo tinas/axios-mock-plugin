@@ -13,9 +13,14 @@ import {
   MockOptions
 } from './types'
 
-import { mergeOptions } from './utils/normalize-config'
-import { createError, createLog, createWarning } from './utils/logger'
-import { isDevelopment } from './utils/env'
+import {
+  createError,
+  createLog,
+  createWarning,
+  delayPromise,
+  isDevelopment,
+  mergeOptions
+} from './utils'
 
 export const DEFAULT_MOCK_OPTIONS: InternalMockOptions = {
   enabled: true,
@@ -108,11 +113,13 @@ export class AxiosMocker {
     }
 
     if (mergedConfig.error && typeof mergedConfig.error === 'object') {
+      await delayPromise(mergedConfig.delay)
       const { message, status = 500 } = mergedConfig.error
       createError(`${message} (status: ${status})`)
     }
 
     if (mergedConfig.errorRate > 0 && Math.random() < mergedConfig.errorRate) {
+      await delayPromise(mergedConfig.delay)
       createError('Random mock error (status: 500)')
     }
 
@@ -151,7 +158,7 @@ export class AxiosMocker {
       : mergedConfig.delay
 
     if (delay > 0) {
-      await new Promise((resolve) => setTimeout(resolve, delay))
+      await delayPromise(delay)
     }
 
     const mockRequest: MockRequest = {

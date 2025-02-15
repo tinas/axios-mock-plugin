@@ -1,7 +1,7 @@
 import { AxiosInstance } from 'axios'
 import { AxiosMockerConfig, AxiosRequestConfigWithMock } from './types'
 import { AxiosMocker, DEFAULT_MOCK_OPTIONS } from './axios-mocker'
-import { mergeOptions } from './utils/normalize-config'
+import { mergeOptions } from './utils'
 
 export function attachMockInterceptor(
   axiosInstance: AxiosInstance,

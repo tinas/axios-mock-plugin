@@ -1,4 +1,4 @@
-import { isDevelopment } from '../src/utils/env'
+import { isDevelopment } from '../src/utils'
 
 describe('env utils', () => {
   const originalEnv = process.env.NODE_ENV

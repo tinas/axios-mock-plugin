@@ -1,6 +1,6 @@
 import { AxiosHeaders } from 'axios'
 import { AxiosMocker } from '../src/axios-mocker'
-import { isDevelopment } from '../src/utils/env'
+import { isDevelopment } from '../src/utils'
 import { AxiosRequestConfigWithMock } from '../src/types'
 
 vi.mock('../src/utils/env', () => ({

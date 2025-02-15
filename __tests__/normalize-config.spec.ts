@@ -1,5 +1,5 @@
 import { DEFAULT_MOCK_OPTIONS } from '../src/axios-mocker'
-import { isObject, mergeObjects, mergeOptions } from '../src/utils/normalize-config'
+import { isObject, mergeObjects, mergeOptions } from '../src/utils'
 
 describe('normalize config utils', () => {
   describe('isObject', () => {

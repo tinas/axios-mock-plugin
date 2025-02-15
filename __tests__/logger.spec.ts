@@ -1,4 +1,4 @@
-import { createError, createWarning, createLog } from '../src/utils/logger'
+import { createError, createWarning, createLog } from '../src/utils'
 
 describe('logger utils', () => {
   it('should create error', () => {
