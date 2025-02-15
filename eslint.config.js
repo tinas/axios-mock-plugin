@@ -32,8 +32,8 @@ export default tseslint.config(
       '@stylistic/space-before-blocks': 'error',
       '@stylistic/space-before-function-paren': ['error', {
         'anonymous': 'always',
+        'asyncArrow': 'always',
         'named': 'never',
-        'asyncArrow': 'never',
       }],
       '@stylistic/space-in-parens': ['error', 'never'],
       '@stylistic/space-infix-ops': 'error',

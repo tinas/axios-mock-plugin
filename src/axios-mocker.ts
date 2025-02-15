@@ -3,32 +3,42 @@ import { match } from 'path-to-regexp'
 
 import {
   AxiosRequestConfigWithMock,
-  MockConfig,
   MockEndpoint,
   EndpointsMap,
   MockRequest,
-  NormalizedMockConfig,
+  InternalMockOptions,
   RequestHook,
   ResponseHook,
-  AxiosMockerOptions
+  AxiosMockerConfig,
+  MockOptions
 } from './types'
 
-import { mergeMockConfigs, normalizeMockConfig } from './utils/normalize-config'
+import { mergeOptions } from './utils/normalize-config'
 import { createError, createLog, createWarning } from './utils/logger'
 import { isDevelopment } from './utils/env'
 
+export const DEFAULT_MOCK_OPTIONS: InternalMockOptions = {
+  enabled: true,
+  delay: 0,
+  errorRate: 0,
+  headers: {},
+  error: undefined,
+  getDelay: undefined,
+  enableLogging: false
+}
+
 export class AxiosMocker {
-  private config: NormalizedMockConfig
   private endpoints: Map<string, MockEndpoint>
+  private defaultOptions: InternalMockOptions
   private requestHooks: Array<RequestHook>
   private responseHooks: Array<ResponseHook>
 
-  constructor(options?: AxiosMockerOptions) {
-    this.config = normalizeMockConfig(options?.config)
+  constructor(config?: AxiosMockerConfig) {
+    this.defaultOptions = mergeOptions(DEFAULT_MOCK_OPTIONS, config?.defaultOptions)
     this.endpoints = new Map<string, MockEndpoint>()
     this.requestHooks = []
     this.responseHooks = []
-    this.loadEndpoints(options?.endpoints)
+    this.loadEndpoints(config?.endpoints)
   }
 
   private loadEndpoints(endpoints?: EndpointsMap): void {
@@ -74,12 +84,12 @@ export class AxiosMocker {
     return [...this.endpoints.keys()]
   }
 
-  public getConfig(): NormalizedMockConfig {
-    return this.config
+  public getDefaultOptions(): InternalMockOptions {
+    return this.defaultOptions
   }
 
-  public updateConfig(config: Partial<MockConfig>): void {
-    this.config = normalizeMockConfig(config)
+  public updateDefaultOptions(options: Partial<MockOptions>): void {
+    this.defaultOptions = mergeOptions(this.getDefaultOptions(), options)
   }
 
   public addRequestHook(hook: (request: MockRequest) => void | Promise<void>): void {
@@ -91,7 +101,7 @@ export class AxiosMocker {
   }
 
   public async handleRequest(axiosConfig: AxiosRequestConfigWithMock): Promise<AxiosResponse> {
-    const mergedConfig = mergeMockConfigs(this.config, axiosConfig.mock)
+    const mergedConfig = mergeOptions(this.getDefaultOptions(), axiosConfig.mock)
 
     if (!mergedConfig.enabled) {
       createError(`Mocking is disabled for this request: ${axiosConfig.url}`)

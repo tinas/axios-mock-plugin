@@ -1,7 +1,6 @@
 # Axios Mock Plugin
 
 [![npm version](https://img.shields.io/npm/v/axios-mock-plugin.svg)](https://www.npmjs.com/package/axios-mock-plugin)
-[![Build Status](https://img.shields.io/github/workflow/status/tinas/axios-mock-plugin/CI)](https://github.com/tinas/axios-mock-plugin/actions)
 [![codecov](https://codecov.io/gh/tinas/axios-mock-plugin/branch/main/graph/badge.svg)](https://codecov.io/gh/tinas/axios-mock-plugin)
 [![License](https://img.shields.io/npm/l/axios-mock-plugin.svg)](LICENSE)
 
@@ -150,11 +149,11 @@ Attaches a mock interceptor to an Axios instance.
 
 ```typescript
 import { AxiosInstance } from 'axios'
-import { AxiosMocker, AxiosMockerOptions } from 'axios-mock-plugin'
+import { AxiosMocker, AxiosMockerConfig } from 'axios-mock-plugin'
 
 function attachMockInterceptor(
   axiosInstance: AxiosInstance,
-  options?: AxiosMockerOptions
+  config?: AxiosMockerConfig
 ): {
   mocker: AxiosMocker
   interceptorId: number
@@ -178,10 +177,10 @@ The mock configuration extends Axios request config:
 
 ```typescript
 interface AxiosRequestConfigWithMock extends InternalAxiosRequestConfig<any> {
-  mock?: boolean | Partial<MockConfig>
+  mock?: boolean | Partial<MockOptions>
 }
 
-interface MockConfig {
+interface MockOptions {
   enabled?: boolean
   delay?: number
   errorRate?: number
@@ -250,7 +249,7 @@ type ResponseHook = (
 ### Default Config
 
 ```typescript
-const defaultConfig: NormalizedMockConfig = {
+const defaultConfig: InternalMockOptions = {
   enabled: true,      // Mock interceptor is enabled by default
   delay: 0,          // No delay
   errorRate: 0,      // No random errors

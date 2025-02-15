@@ -1,128 +1,104 @@
-import { mergeMockConfigs, normalizeMockConfig } from '../src/utils/normalize-config'
+import { DEFAULT_MOCK_OPTIONS } from '../src/axios-mocker'
+import { isObject, mergeObjects, mergeOptions } from '../src/utils/normalize-config'
 
 describe('normalize config utils', () => {
-  describe('normalizeMockConfig', () => {
-    it('should return default values', () => {
-      const normalizedConfig = normalizeMockConfig()
-
-      expect(normalizedConfig).toEqual({
-        enabled: true,
-        delay: 0,
-        errorRate: 0,
-        headers: {},
-        error: undefined,
-        getDelay: undefined,
-        enableLogging: false
-      })
+  describe('isObject', () => {
+    it('should return true for objects', () => {
+      expect(isObject({})).toBe(true)
+      expect(isObject({ key: 'value' })).toBe(true)
+      expect(isObject(new Map())).toBe(true)
     })
 
-    it('should return custom values', () => {
-      const normalizedConfig = normalizeMockConfig({
-        enabled: false,
-        delay: 1000,
-        errorRate: 0.5,
-        headers: { 'X-Custom-Header': 'custom' },
-        error: { status: 500, message: 'Internal Server Error' },
-        getDelay: () => 1000,
-        enableLogging: true
-      })
+    it('should return false for non-objects', () => {
+      expect(isObject(undefined)).toBe(false)
+      expect(isObject(null)).toBe(false)
+      expect(isObject('string')).toBe(false)
+      expect(isObject(123)).toBe(false)
+      expect(isObject(true)).toBe(false)
+      expect(isObject(false)).toBe(false)
+      expect(isObject([])).toBe(false)
+    })
+  })
 
-      expect(normalizedConfig).toEqual({
-        enabled: false,
-        delay: 1000,
-        errorRate: 0.5,
-        headers: { 'X-Custom-Header': 'custom' },
-        error: { status: 500, message: 'Internal Server Error' },
-        getDelay: expect.any(Function),
-        enableLogging: true
+  describe('mergeObjects', () => {
+    it('should merge objects', () => {
+      const defaults = {
+        a: 1,
+        b: 'default',
+        c: { key: 'default' }
+      }
+
+      const overrides = {
+        b: 'override',
+        c: { key: 'override' }
+      }
+
+      const merged = mergeObjects(defaults, overrides)
+
+      expect(merged).toEqual({
+        a: 1,
+        b: 'override',
+        c: { key: 'override' }
       })
     })
   })
 
-  describe('mergeMockConfigs', () => {
-    let globalConfig = normalizeMockConfig()
+  describe('mergeOptions', () => {
+    let defaultOptions = { ...DEFAULT_MOCK_OPTIONS }
 
-    beforeEach(() => {
-      globalConfig = normalizeMockConfig({
-        enabled: false,
-        delay: 1000,
+    afterEach(() => {
+      defaultOptions = { ...DEFAULT_MOCK_OPTIONS }
+    })
+
+    it('should return default values if options is undefined', () => {
+      const mergedOptions = mergeOptions(defaultOptions)
+
+      expect(mergedOptions).toEqual(defaultOptions)
+    })
+
+    it('should return default values if options is true', () => {
+      const mergedOptions = mergeOptions(defaultOptions, true)
+
+      expect(mergedOptions).toEqual(defaultOptions)
+    })
+
+    it('should disable mocking if options is false', () => {
+      const mergedOptions = mergeOptions(defaultOptions, false)
+
+      expect(mergedOptions).toEqual({ ...defaultOptions, enabled: false })
+    })
+
+    it('should merge options with defaults', () => {
+      const mergedOptions = mergeOptions(defaultOptions, {
+        delay: 100,
         errorRate: 0.5,
-        headers: { 'X-Custom-Header': 'global' },
+        headers: { 'X-Custom-Header': 'value' },
         error: { status: 500, message: 'Internal Server Error' },
-        getDelay: () => 1000,
+        getDelay: () => 200,
         enableLogging: true
       })
-    })
 
-    it('should return default values if request config is true', () => {
-      const mergedConfig = mergeMockConfigs(globalConfig, true)
-
-      expect(mergedConfig).toEqual({
-        enabled: true,
-        delay: 1000,
+      expect(mergedOptions).toEqual({
+        enabled: defaultOptions.enabled,
+        delay: 100,
         errorRate: 0.5,
-        headers: { 'X-Custom-Header': 'global' },
+        headers: { ...defaultOptions.headers, 'X-Custom-Header': 'value' },
         error: { status: 500, message: 'Internal Server Error' },
         getDelay: expect.any(Function),
         enableLogging: true
       })
     })
 
-    it('should return global config if request config is not an object', () => {
-      const mergedConfig = mergeMockConfigs(globalConfig, false)
+    it('should merge options with defaults and override enabled', () => {
+      const mergedOptions = mergeOptions(defaultOptions, { enabled: false })
 
-      expect(mergedConfig).toEqual({
-        enabled: false,
-        delay: 1000,
-        errorRate: 0.5,
-        headers: { 'X-Custom-Header': 'global' },
-        error: { status: 500, message: 'Internal Server Error' },
-        getDelay: expect.any(Function),
-        enableLogging: true
-      })
+      expect(mergedOptions).toEqual({ ...defaultOptions, enabled: false })
     })
 
-    it('should merge global and request configs', () => {
-      const requestConfig = {
-        enabled: true,
-        delay: 2000,
-        errorRate: 0.75,
-        headers: { 'X-Custom-Header': 'request' },
-        error: { status: 404, message: 'Not Found' },
-        getDelay: () => 2000,
-        enableLogging: false
-      }
+    it('should return default values if options is not an object', () => {
+      const mergedOptions = mergeOptions(defaultOptions, 123 as any)
 
-      const mergedConfig = mergeMockConfigs(globalConfig, requestConfig)
-
-      expect(mergedConfig).toEqual({
-        enabled: true,
-        delay: 2000,
-        errorRate: 0.75,
-        headers: { 'X-Custom-Header': 'request' },
-        error: { status: 404, message: 'Not Found' },
-        getDelay: expect.any(Function),
-        enableLogging: false
-      })
-    })
-
-    it('should merge global and request configs with partial request config', () => {
-      const requestConfig = {
-        delay: 2000,
-        error: { status: 404, message: 'Not Found' }
-      }
-
-      const mergedConfig = mergeMockConfigs(globalConfig, requestConfig)
-
-      expect(mergedConfig).toEqual({
-        enabled: false,
-        delay: 2000,
-        errorRate: 0.5,
-        headers: { 'X-Custom-Header': 'global' },
-        error: { status: 404, message: 'Not Found' },
-        getDelay: expect.any(Function),
-        enableLogging: true
-      })
+      expect(mergedOptions).toEqual(defaultOptions)
     })
   })
 })

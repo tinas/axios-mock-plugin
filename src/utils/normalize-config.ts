@@ -1,38 +1,43 @@
-import { MockConfig, NormalizedMockConfig } from '../types'
+import { MockOptions, InternalMockOptions } from '../types'
 
-export const DEFAULT_NORMALIZED_MOCK_CONFIG: NormalizedMockConfig = {
-  enabled: true,
-  delay: 0,
-  errorRate: 0,
-  headers: {},
-  error: undefined,
-  getDelay: undefined,
-  enableLogging: false
+export function isObject(item: any): item is object {
+  return item !== null && typeof item === 'object' && !Array.isArray(item)
 }
 
-export function normalizeMockConfig(config?: Partial<MockConfig>): NormalizedMockConfig {
-  return {
-    enabled: config?.enabled ?? DEFAULT_NORMALIZED_MOCK_CONFIG.enabled,
-    delay: config?.delay ?? DEFAULT_NORMALIZED_MOCK_CONFIG.delay,
-    errorRate: config?.errorRate ?? DEFAULT_NORMALIZED_MOCK_CONFIG.errorRate,
-    headers: { ...DEFAULT_NORMALIZED_MOCK_CONFIG.headers, ...(config?.headers ?? {}) },
-    error: config?.error ?? DEFAULT_NORMALIZED_MOCK_CONFIG.error,
-    getDelay: config?.getDelay ?? DEFAULT_NORMALIZED_MOCK_CONFIG.getDelay,
-    enableLogging: config?.enableLogging ?? DEFAULT_NORMALIZED_MOCK_CONFIG.enableLogging
+/**
+ * Recursively merge two objects.
+ * The original `defaultOptions` is not mutated.
+ */
+export function mergeObjects<T extends object>(defaultOptions: T, options: Partial<T>): T {
+  const result = { ...defaultOptions }
+  for (const key in options) {
+    if (Object.prototype.hasOwnProperty.call(options, key)) {
+      const defaultValue = defaultOptions[key]
+      const optionValue = options[key]
+      if (isObject(defaultValue) && isObject(optionValue)) {
+        result[key] = mergeObjects(defaultValue, optionValue)
+      } else {
+        result[key] = optionValue as any
+      }
+    }
   }
+  return result
 }
 
-export function mergeMockConfigs(
-  globalConfig: NormalizedMockConfig,
-  requestConfig?: boolean | Partial<MockConfig>,
-): NormalizedMockConfig {
-  if (requestConfig === true) return { ...globalConfig, enabled: true }
-  if (typeof requestConfig !== 'object' || requestConfig === null) return globalConfig
-  return {
-    ...globalConfig,
-    ...requestConfig,
-    headers: { ...globalConfig.headers, ...(requestConfig.headers ?? {}) },
-    enabled: requestConfig.enabled ?? globalConfig.enabled,
-    getDelay: requestConfig.getDelay ?? globalConfig.getDelay
+/**
+ * Merge default mock options with overrides.
+ */
+export function mergeOptions(
+  defaultOptions: InternalMockOptions,
+  options?: boolean | Partial<MockOptions>
+): InternalMockOptions {
+  if (typeof options === 'boolean') {
+    return { ...defaultOptions, enabled: options }
   }
+
+  if (!isObject(options)) {
+    return { ...defaultOptions }
+  }
+
+  return mergeObjects(defaultOptions, options) as InternalMockOptions
 }

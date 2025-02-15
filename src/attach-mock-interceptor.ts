@@ -1,12 +1,12 @@
 import { AxiosInstance } from 'axios'
-import { AxiosMockerOptions, AxiosRequestConfigWithMock } from './types'
+import { AxiosMockerConfig, AxiosRequestConfigWithMock } from './types'
 import { AxiosMocker } from './axios-mocker'
 
 export function attachMockInterceptor(
   axiosInstance: AxiosInstance,
-  options?: AxiosMockerOptions,
+  config?: AxiosMockerConfig,
 ): { mocker: AxiosMocker; interceptorId: number } {
-  const mocker = new AxiosMocker(options)
+  const mocker = new AxiosMocker(config)
   const interceptorId = axiosInstance.interceptors.request.use((config: AxiosRequestConfigWithMock) => {
     if (
       config.mock === true ||

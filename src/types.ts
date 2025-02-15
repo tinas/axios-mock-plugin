@@ -1,10 +1,10 @@
 import { AxiosResponse, InternalAxiosRequestConfig } from 'axios'
 
 export interface AxiosRequestConfigWithMock extends InternalAxiosRequestConfig<any> {
-  mock?: boolean | Partial<MockConfig>;
+  mock?: boolean | Partial<MockOptions>;
 }
 
-export interface MockConfig {
+export interface MockOptions {
   enabled?: boolean
   delay?: number
   errorRate?: number
@@ -14,7 +14,7 @@ export interface MockConfig {
   enableLogging?: boolean
 }
 
-export interface NormalizedMockConfig {
+export interface InternalMockOptions {
   enabled: boolean
   delay: number
   errorRate: number
@@ -34,9 +34,9 @@ export interface MockRequest<
   body: Body;
 }
 
-export interface AxiosMockerOptions {
+export interface AxiosMockerConfig {
   endpoints?: EndpointsMap;
-  config?: Partial<MockConfig>;
+  defaultOptions?: Partial<MockOptions>;
 }
 
 export type MockEndpoint<

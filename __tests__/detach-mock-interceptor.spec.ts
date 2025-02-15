@@ -1,19 +1,15 @@
-import axios from 'axios'
+import axios, { AxiosInstance } from 'axios'
 import { attachMockInterceptor } from '../src/attach-mock-interceptor'
 import { detachMockInterceptor } from '../src/detach-mock-interceptor'
 
 describe('detachMockInterceptor', () => {
-  let instance: ReturnType<typeof axios.create>
+  let instance: AxiosInstance
 
   beforeEach(() => {
     instance = axios.create({
       baseURL: 'https://api.example.com',
       headers: { 'Content-Type': 'application/json' },
     })
-  })
-
-  afterEach(() => {
-    vi.restoreAllMocks()
   })
 
   it('should remove the interceptor from the Axios instance', () => {

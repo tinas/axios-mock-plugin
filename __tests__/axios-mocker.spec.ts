@@ -27,7 +27,7 @@ describe('AxiosMocker class', () => {
       expect(axiosMocker.listEndpoints()).toEqual([])
       expect(axiosMocker['requestHooks']).toEqual([])
       expect(axiosMocker['responseHooks']).toEqual([])
-      expect(axiosMocker['config']).toEqual({
+      expect(axiosMocker['defaultOptions']).toEqual({
         enabled: true,
         delay: 0,
         errorRate: 0,
@@ -38,7 +38,7 @@ describe('AxiosMocker class', () => {
 
     it('should initialize with custom values', () => {
       const axiosMocker = new AxiosMocker({
-        config: {
+        defaultOptions: {
           enabled: false,
           delay: 1000,
           errorRate: 0.5,
@@ -56,7 +56,7 @@ describe('AxiosMocker class', () => {
       expect(axiosMocker.listEndpoints()).toEqual(['GET /api/users'])
       expect(axiosMocker['requestHooks']).toEqual([])
       expect(axiosMocker['responseHooks']).toEqual([])
-      expect(axiosMocker['config']).toEqual({
+      expect(axiosMocker['defaultOptions']).toEqual({
         enabled: false,
         delay: 1000,
         errorRate: 0.5,
@@ -208,11 +208,13 @@ describe('AxiosMocker class', () => {
     it('should get default global config', () => {
       const axiosMocker = new AxiosMocker()
 
-      expect(axiosMocker.getConfig()).toEqual({
+      expect(axiosMocker.getDefaultOptions()).toEqual({
         enabled: true,
         delay: 0,
         errorRate: 0,
         headers: {},
+        error: undefined,
+        getDelay: undefined,
         enableLogging: false
       })
     })
@@ -220,7 +222,7 @@ describe('AxiosMocker class', () => {
     it('should update global config', () => {
       const axiosMocker = new AxiosMocker()
 
-      axiosMocker.updateConfig({
+      axiosMocker.updateDefaultOptions({
         enabled: false,
         delay: 1000,
         errorRate: 0.5,
@@ -230,7 +232,7 @@ describe('AxiosMocker class', () => {
         enableLogging: true
       })
 
-      expect(axiosMocker.getConfig()).toEqual({
+      expect(axiosMocker.getDefaultOptions()).toEqual({
         enabled: false,
         delay: 1000,
         errorRate: 0.5,
@@ -250,14 +252,14 @@ describe('AxiosMocker class', () => {
       expect(axiosMocker['requestHooks']).toEqual([preHook])
     })
 
-    it('should modify the request via a request-hook override', async() => {
+    it('should modify the request via a request-hook override', async () => {
       const mocker = new AxiosMocker({
         endpoints: {
           'GET /test': (req) => {
             return { modified: req.params.customProperty == 'overridden' }
           },
         },
-        config: { enabled: true, delay: 0 },
+        defaultOptions: { delay: 0 },
       })
 
       mocker.addRequestHook((request) => {
@@ -285,14 +287,14 @@ describe('AxiosMocker class', () => {
       expect(axiosMocker['responseHooks']).toEqual([postHook])
     })
 
-    it('should modify the response via a response-hook override', async() => {
+    it('should modify the response via a response-hook override', async () => {
       const mocker = new AxiosMocker({
         endpoints: {
           'GET /test': () => {
             return { message: 'original' }
           },
         },
-        config: { enabled: true, delay: 0 },
+        defaultOptions: { delay: 0 },
       })
 
       mocker.addResponseHook((response) => {
@@ -312,39 +314,39 @@ describe('AxiosMocker class', () => {
   })
 
   describe('handleRequest', () => {
-    it('should throw error if mocking is disabled', async() => {
+    it('should throw error if mocking is disabled', async () => {
       const config = getDefaultAxiosConfig()
       config.url = '/api/users'
       const axiosMocker = new AxiosMocker()
 
-      axiosMocker.updateConfig({ enabled: false })
+      axiosMocker.updateDefaultOptions({ enabled: false })
 
       await expect(axiosMocker.handleRequest(config))
         .rejects.toThrow('[axios-mock-plugin] Mocking is disabled for this request: /api/users')
     })
 
-    it('should throw error if error is defined', async() => {
+    it('should throw error if error is defined', async () => {
       const config = getDefaultAxiosConfig()
       const axiosMocker = new AxiosMocker()
 
-      axiosMocker.updateConfig({ error: { status: 500, message: 'Internal Server Error' } })
+      axiosMocker.updateDefaultOptions({ error: { status: 500, message: 'Internal Server Error' } })
 
       await expect(axiosMocker.handleRequest(config))
         .rejects.toThrow('Internal Server Error (status: 500)')
     })
 
-    it('should throw error based on error rate', async() => {
+    it('should throw error based on error rate', async () => {
       vi.spyOn(Math, 'random').mockReturnValue(0.1)
       const config = getDefaultAxiosConfig()
       const axiosMocker = new AxiosMocker()
 
-      axiosMocker.updateConfig({ errorRate: 0.5 })
+      axiosMocker.updateDefaultOptions({ errorRate: 0.5 })
 
       await expect(axiosMocker.handleRequest(config))
         .rejects.toThrow('Random mock error (status: 500)')
     })
 
-    it('should set GET as default method', async() => {
+    it('should set GET as default method', async () => {
       const config = getDefaultAxiosConfig()
       // @ts-expect-error Testing undefined method
       config.method = undefined
@@ -360,12 +362,11 @@ describe('AxiosMocker class', () => {
         .rejects.toThrow('No mock endpoint found for "GET "')
     })
 
-    it('should slice baseURL from url', async() => {
+    it('should slice baseURL from url', async () => {
       const config = getDefaultAxiosConfig()
       config.baseURL = 'http://api.example.com'
       config.url = 'http://api.example.com/api/users'
       const axiosMocker = new AxiosMocker({
-        config: { enabled: true },
         endpoints: new Map([
           ['GET /api/users', () => Promise.resolve({ data: [] })]
         ])
@@ -378,11 +379,10 @@ describe('AxiosMocker class', () => {
     })
 
     describe('path matching', () => {
-      it('should match endpoint', async() => {
+      it('should match endpoint', async () => {
         const config = getDefaultAxiosConfig()
         config.url = '/api/users'
         const axiosMocker = new AxiosMocker({
-          config: { enabled: true },
           endpoints: new Map([
             ['POST /api/posts', () => Promise.resolve({ data: [] })],
             ['GET /api/users', () => Promise.resolve({ data: [] })]
@@ -395,11 +395,10 @@ describe('AxiosMocker class', () => {
         expect(response.data).toEqual({ data: [] })
       })
 
-      it('should match endpoint with parameters', async() => {
+      it('should match endpoint with parameters', async () => {
         const config = getDefaultAxiosConfig()
         config.url = '/api/users/1'
         const axiosMocker = new AxiosMocker({
-          config: { enabled: true },
           endpoints: new Map([
             ['GET /api/users/:id', (request) => Promise.resolve({ data: request.params })]
           ])
@@ -411,11 +410,10 @@ describe('AxiosMocker class', () => {
         expect(response.data).toEqual({ data: { id: '1' } })
       })
 
-      it('should throw error if no endpoint found', async() => {
+      it('should throw error if no endpoint found', async () => {
         const config = getDefaultAxiosConfig()
         config.url = '/api/posts'
         const axiosMocker = new AxiosMocker({
-          config: { enabled: true },
           endpoints: new Map([
             ['GET /api/users', () => Promise.resolve({ data: [] })]
           ])
@@ -425,11 +423,10 @@ describe('AxiosMocker class', () => {
           .rejects.toThrow('No mock endpoint found for "GET /api/posts"')
       })
 
-      it('should throw error if path matching failed', async() => {
+      it('should throw error if path matching failed', async () => {
         const config = getDefaultAxiosConfig()
         config.url = '/api/users/1'
         const axiosMocker = new AxiosMocker({
-          config: { enabled: true },
           endpoints: new Map([
             ['GET /api/posts/?id', () => Promise.resolve({ data: [] })]
           ])
@@ -439,11 +436,10 @@ describe('AxiosMocker class', () => {
           .rejects.toThrow('Path matching failed:')
       })
 
-      it('should throw error if no matching endpoint found', async() => {
+      it('should throw error if no matching endpoint found', async () => {
         const config = getDefaultAxiosConfig()
         config.url = '/api/posts/1'
         const axiosMocker = new AxiosMocker({
-          config: { enabled: true },
           endpoints: new Map([
             ['GET /api/users/:id', () => Promise.resolve({ data: [] })]
           ])
@@ -453,7 +449,7 @@ describe('AxiosMocker class', () => {
           .rejects.toThrow('No mock endpoint found for "GET /api/posts/1"')
       })
 
-      it('should throws a meaningful error message when path-to-regexp.match throws an error', async() => {
+      it('should throws a meaningful error message when path-to-regexp.match throws an error', async () => {
         const pathToRegexp = await import('path-to-regexp')
         vi.spyOn(pathToRegexp, 'match').mockImplementation(() => {
           throw 'Forced error message'
@@ -462,7 +458,6 @@ describe('AxiosMocker class', () => {
         const config = getDefaultAxiosConfig()
         config.url = '/api/posts/1'
         const axiosMocker = new AxiosMocker({
-          config: { enabled: true },
           endpoints: new Map([
             ['GET /api/users/:id', () => Promise.resolve({ data: [] })]
           ])
@@ -475,11 +470,11 @@ describe('AxiosMocker class', () => {
       })
     })
 
-    it('should delay response', async() => {
+    it('should delay response', async () => {
       const config = getDefaultAxiosConfig()
       config.url = '/api/users'
       const axiosMocker = new AxiosMocker({
-        config: { enabled: true, delay: 300 },
+        defaultOptions: { delay: 300 },
         endpoints: new Map([
           ['GET /api/users', () => Promise.resolve({ data: [] })]
         ])
@@ -492,17 +487,16 @@ describe('AxiosMocker class', () => {
       expect(end - start).toBeGreaterThanOrEqual(300)
     })
 
-    it('should get delay from function', async() => {
+    it('should get delay from function', async () => {
       const config = getDefaultAxiosConfig()
       config.url = '/api/users'
       const axiosMocker = new AxiosMocker({
-        config: { enabled: true },
         endpoints: new Map([
           ['GET /api/users', () => Promise.resolve({ data: [] })]
         ])
       })
 
-      axiosMocker.updateConfig({ getDelay: () => 300 })
+      axiosMocker.updateDefaultOptions({ getDelay: () => 300 })
 
       const start = Date.now()
       await axiosMocker.handleRequest(config)
@@ -511,13 +505,12 @@ describe('AxiosMocker class', () => {
       expect(end - start).toBeGreaterThanOrEqual(300)
     })
 
-    it('should parse request data', async() => {
+    it('should parse request data', async () => {
       const config = getDefaultAxiosConfig()
       config.url = '/api/users'
       // @ts-expect-error Testing invalid data type
       config.data = JSON.stringify({ name: 'John Doe' })
       const axiosMocker = new AxiosMocker({
-        config: { enabled: true },
         endpoints: new Map([
           ['GET /api/users', (request) => Promise.resolve({ data: request.body })]
         ])
@@ -529,13 +522,12 @@ describe('AxiosMocker class', () => {
       expect(response.data).toEqual({ data: { name: 'John Doe' } })
     })
 
-    it('should not parse request data if it is already an object', async() => {
+    it('should not parse request data if it is already an object', async () => {
       const config = getDefaultAxiosConfig()
       config.url = '/api/users'
       // @ts-expect-error Testing invalid data type
       config.data = { name: 'John Doe' }
       const axiosMocker = new AxiosMocker({
-        config: { enabled: true },
         endpoints: new Map([
           ['GET /api/users', (request) => Promise.resolve({ data: request.body })]
         ])
@@ -547,12 +539,12 @@ describe('AxiosMocker class', () => {
       expect(response.data).toEqual({ data: { name: 'John Doe' } })
     })
 
-    it('should log request and response', async() => {
+    it('should log request and response', async () => {
       vi.spyOn(console, 'log').mockImplementation(() => { })
       const config = getDefaultAxiosConfig()
       config.url = '/api/users'
       const axiosMocker = new AxiosMocker({
-        config: { enableLogging: true },
+        defaultOptions: { enableLogging: true },
         endpoints: new Map([
           ['GET /api/users', () => Promise.resolve({ data: [] })]
         ])
@@ -568,7 +560,7 @@ describe('AxiosMocker class', () => {
       )
     })
 
-    it('should call request-hook', async() => {
+    it('should call request-hook', async () => {
       const hook = vi.fn()
       const config = getDefaultAxiosConfig()
       config.url = '/api/users'
@@ -584,7 +576,7 @@ describe('AxiosMocker class', () => {
       expect(hook).toHaveBeenCalled()
     })
 
-    it('should call post-hook', async() => {
+    it('should call post-hook', async () => {
       const hook = vi.fn()
       const config = getDefaultAxiosConfig()
       config.url = '/api/users'
@@ -600,11 +592,10 @@ describe('AxiosMocker class', () => {
       expect(hook).toHaveBeenCalled()
     })
 
-    it('should throw error if handler failed', async() => {
+    it('should throw error if handler failed', async () => {
       const config = getDefaultAxiosConfig()
       config.url = '/api/users'
       const axiosMocker = new AxiosMocker({
-        config: { enabled: true },
         endpoints: new Map([
           ['GET /api/users', () => {
             throw new Error('Internal Server Error')
@@ -616,11 +607,10 @@ describe('AxiosMocker class', () => {
         .rejects.toThrow('Handler for GET /api/users failed: Internal Server Error')
     })
 
-    it('should throw string error if handler failed', async() => {
+    it('should throw string error if handler failed', async () => {
       const config = getDefaultAxiosConfig()
       config.url = '/api/users'
       const axiosMocker = new AxiosMocker({
-        config: { enabled: true },
         endpoints: new Map([
           ['GET /api/users', () => {
             throw 'String error'
@@ -632,11 +622,10 @@ describe('AxiosMocker class', () => {
         .rejects.toThrow('Handler for GET /api/users failed: String error')
     })
 
-    it('should return response', async() => {
+    it('should return response', async () => {
       const config = getDefaultAxiosConfig()
       config.url = '/api/users'
       const axiosMocker = new AxiosMocker({
-        config: { enabled: true },
         endpoints: new Map([
           ['GET /api/users', () => Promise.resolve({ data: [] })]
         ])
@@ -652,7 +641,7 @@ describe('AxiosMocker class', () => {
       const methods = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH']
 
       methods.forEach((method) => {
-        it(`should return response for ${method} request`, async() => {
+        it(`should return response for ${method} request`, async () => {
           const config = getDefaultAxiosConfig()
           config.method = method
           config.url = '/api/test'
@@ -664,7 +653,7 @@ describe('AxiosMocker class', () => {
           ])
 
           const axiosMocker = new AxiosMocker({
-            config: { enabled: true, delay: 0 },
+            defaultOptions: { delay: 0 },
             endpoints,
           })
 
@@ -687,7 +676,7 @@ describe('AxiosMocker class', () => {
             return { success: true }
           },
         },
-        config: { enabled: true, delay: 0 },
+        defaultOptions: { delay: 0 },
       })
 
       config = {
@@ -698,16 +687,12 @@ describe('AxiosMocker class', () => {
       }
     })
 
-    afterEach(() => {
-      vi.restoreAllMocks()
-    })
-
-    it('should wrap a synchronous return value in a promise and return the correct response', async() => {
+    it('should wrap a synchronous return value in a promise and return the correct response', async () => {
       const mocker = new AxiosMocker({
         endpoints: new Map([
           ['GET /api/users', () => ({ data: ['value1', 'value2'] })]
         ]),
-        config: { enabled: true, delay: 0 }
+        defaultOptions: { delay: 0 }
       })
 
       const config = {
@@ -723,7 +708,7 @@ describe('AxiosMocker class', () => {
       expect(response.data).toEqual({ data: ['value1', 'value2'] })
     })
 
-    it('should throw an error if a request-hook fails', async() => {
+    it('should throw an error if a request-hook fails', async () => {
       mocker.addRequestHook(() => {
         throw new Error('Pre-hook error')
       })
@@ -732,7 +717,7 @@ describe('AxiosMocker class', () => {
         .rejects.toThrow('Pre-hook error')
     })
 
-    it('should throw an error if a response-hook fails', async() => {
+    it('should throw an error if a response-hook fails', async () => {
       mocker.addResponseHook(() => {
         throw new Error('Post-hook error')
       })
@@ -741,20 +726,23 @@ describe('AxiosMocker class', () => {
         .rejects.toThrow('Post-hook error')
     })
 
-    it('should not throw a random error when errorRate is 0', async() => {
-      mocker.updateConfig({ errorRate: 0 })
+    it('should not throw a random error when errorRate is 0', async () => {
+      mocker.updateDefaultOptions({ errorRate: 0 })
+
       const response = await mocker.handleRequest(config)
+
       expect(response.status).toEqual(200)
       expect(response.data).toEqual({ success: true })
     })
 
-    it('should throw an error if no endpoint matches the request', async() => {
+    it('should throw an error if no endpoint matches the request', async () => {
       const noMatchConfig: AxiosRequestConfigWithMock = {
         headers: new AxiosHeaders(),
         method: 'GET',
         url: '/non-existent',
         mock: true,
       }
+
       await expect(mocker.handleRequest(noMatchConfig))
         .rejects.toThrow('[axios-mock-plugin] No mock endpoint found for "GET /non-existent"')
     })
