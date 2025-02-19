@@ -359,7 +359,7 @@ describe('AxiosMocker class', () => {
       })
 
       await expect(axiosMocker.handleRequest(config))
-        .rejects.toThrow('No mock endpoint found for "GET "')
+        .rejects.toThrow('No mock endpoint found for "GET /"')
     })
 
     it('should slice baseURL from url', async () => {
@@ -408,6 +408,85 @@ describe('AxiosMocker class', () => {
 
         expect(response.status).toEqual(200)
         expect(response.data).toEqual({ data: { id: '1' } })
+      })
+
+      it('should parse query parameters from URL', async () => {
+        const config = getDefaultAxiosConfig()
+        config.url = '/api/users?id=1&name=John%20Doe'
+        const axiosMocker = new AxiosMocker({
+          endpoints: new Map([
+            ['GET /api/users', (request) => Promise.resolve({ data: request.query })]
+          ])
+        })
+
+        const response = await axiosMocker.handleRequest(config)
+
+        expect(response.status).toEqual(200)
+        expect(response.data).toEqual({ data: { id: '1', name: 'John Doe' } })
+      })
+
+      it('should set query parameters from axios config', async () => {
+        const config = getDefaultAxiosConfig()
+        config.url = '/api/users'
+        // @ts-expect-error Testing invalid data type
+        config.params = { id: '1', name: 'John Doe' }
+        const axiosMocker = new AxiosMocker({
+          endpoints: new Map([
+            ['GET /api/users', (request) => Promise.resolve({ data: request.query })]
+          ])
+        })
+
+        const response = await axiosMocker.handleRequest(config)
+
+        expect(response.status).toEqual(200)
+        expect(response.data).toEqual({ data: { id: '1', name: 'John Doe' } })
+      })
+
+      it('should merge query parameters from URL and axios config', async () => {
+        const config = getDefaultAxiosConfig()
+        config.url = '/api/users?id=1'
+        // @ts-expect-error Testing invalid data type
+        config.params = { name: 'John Doe' }
+        const axiosMocker = new AxiosMocker({
+          endpoints: new Map([
+            ['GET /api/users', (request) => Promise.resolve({ data: request.query })]
+          ])
+        })
+
+        const response = await axiosMocker.handleRequest(config)
+
+        expect(response.status).toEqual(200)
+        expect(response.data).toEqual({ data: { id: '1', name: 'John Doe' } })
+      })
+
+      it('should set query parameters to empty object if not found', async () => {
+        const config = getDefaultAxiosConfig()
+        config.url = '/api/users'
+        const axiosMocker = new AxiosMocker({
+          endpoints: new Map([
+            ['GET /api/users', (request) => Promise.resolve({ data: request.query })]
+          ])
+        })
+
+        const response = await axiosMocker.handleRequest(config)
+
+        expect(response.status).toEqual(200)
+        expect(response.data).toEqual({ data: {} })
+      })
+
+      it('should set empty object if query parameters are invalid', async () => {
+        const config = getDefaultAxiosConfig()
+        config.url = '/api/users?'
+        const axiosMocker = new AxiosMocker({
+          endpoints: new Map([
+            ['GET /api/users', (request) => Promise.resolve({ data: request.query })]
+          ])
+        })
+
+        const response = await axiosMocker.handleRequest(config)
+
+        expect(response.status).toEqual(200)
+        expect(response.data).toEqual({ data: {} })
       })
 
       it('should throw error if no endpoint found', async () => {

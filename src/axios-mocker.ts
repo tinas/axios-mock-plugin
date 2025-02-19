@@ -19,7 +19,9 @@ import {
   createWarning,
   delayPromise,
   isDevelopment,
-  mergeOptions
+  mergeObjects,
+  mergeOptions,
+  parseUrl
 } from './utils'
 
 export const DEFAULT_MOCK_OPTIONS: InternalMockOptions = {
@@ -125,32 +127,29 @@ export class AxiosMocker {
 
     const method = (axiosConfig.method || 'GET').toUpperCase()
     const url = axiosConfig.url || ''
-    let path = url
-    if (axiosConfig.baseURL && url.startsWith(axiosConfig.baseURL)) {
-      path = url.slice(axiosConfig.baseURL.length)
-    }
+    const { pathname, searchParams } = parseUrl(url, axiosConfig.baseURL)
 
     let matchedKey: string | undefined = undefined
-    let parameters: Record<string, string> = {}
+    let parameters: Record<string, unknown> = {}
     for (const [key] of this.endpoints) {
       const [endpointMethod, endpointPath] = key.split(' ')
       if (endpointMethod.toUpperCase() !== method) continue
       try {
         const matcher = match(endpointPath, { decode: decodeURIComponent })
-        const result = matcher(path)
+        const result = matcher(pathname)
         if (result) {
           matchedKey = key
-          parameters = result.params as Record<string, string>
+          parameters = result.params as Record<string, unknown>
           break
         }
       } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : `The endpoint "${method} ${path}" is invalid.`
+        const errorMessage = error instanceof Error ? error.message : `The endpoint "${method} ${pathname}" is invalid.`
         createError(`Path matching failed: ${errorMessage}`)
       }
     }
 
     if (!matchedKey) {
-      createError(`No mock endpoint found for "${method} ${path}"`)
+      createError(`No mock endpoint found for "${method} ${pathname}"`)
     }
 
     const delay = mergedConfig.getDelay && typeof mergedConfig.getDelay === 'function'
@@ -161,16 +160,18 @@ export class AxiosMocker {
       await delayPromise(delay)
     }
 
+    const axiosSearchParams = axiosConfig.params || {}
+    const mergedQuery: Record<string, unknown> = mergeObjects(axiosSearchParams, searchParams)
     const mockRequest: MockRequest = {
       params: parameters,
-      query: (axiosConfig.params as Record<string, unknown>) || {},
+      query: mergedQuery,
       body: typeof axiosConfig.data === 'string' ? JSON.parse(axiosConfig.data) : axiosConfig.data
     }
 
     if (mergedConfig.enableLogging) {
       createLog(
         `Mock Request: Received ${method} request for "${axiosConfig.url}".` +
-        `Processed path: "${path}". Matched endpoint: "${matchedKey}". ` +
+        `Processed path: "${pathname}". Matched endpoint: "${matchedKey}". ` +
         `Extracted parameters: ${JSON.stringify(parameters)}.`
       )
     }
