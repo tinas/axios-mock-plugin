@@ -547,6 +547,19 @@ describe('AxiosMocker class', () => {
 
         vi.restoreAllMocks()
       })
+
+      it('should throw error if method is not defined in endpoint', async () => {
+        const config = getDefaultAxiosConfig()
+        config.url = '/api/users'
+        const axiosMocker = new AxiosMocker({
+          endpoints: new Map([
+            ['/api/users', () => Promise.resolve({ data: [] })]
+          ])
+        })
+
+        await expect(axiosMocker.handleRequest(config))
+          .rejects.toThrow('No mock endpoint found for "GET /api/users"')
+      })
     })
 
     it('should delay response', async () => {

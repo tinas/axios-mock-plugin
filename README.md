@@ -248,8 +248,8 @@ mocker.addEndpoint('POST /api/posts', (req) => ({
   createdAt: new Date().toISOString()
 }))
 
-// Dynamically add an endpoint for "/api/products/:id" that defaults to GET.
-mocker.addEndpoint('/api/products/:id', (req) => ({
+// Dynamically add an endpoint for "/api/products/:id".
+mocker.addEndpoint('GET /api/products/:id', (req) => ({
   id: req.params.id,
   name: 'Wireless Mouse',
   price: 29.99,
