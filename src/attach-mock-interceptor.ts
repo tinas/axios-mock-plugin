@@ -1,6 +1,6 @@
 import { AxiosInstance } from 'axios'
 import { AxiosMockerConfig, AxiosRequestConfigWithMock } from './types'
-import { AxiosMocker, DEFAULT_MOCK_OPTIONS } from './axios-mocker'
+import { AxiosMocker } from './axios-mocker'
 import { mergeOptions } from './utils'
 
 export function attachMockInterceptor(
@@ -10,7 +10,7 @@ export function attachMockInterceptor(
   const mocker = new AxiosMocker(config)
   const interceptorId = axiosInstance.interceptors.request.use((config: AxiosRequestConfigWithMock) => {
     if (config.mock !== undefined) {
-      const mergedMockOptions = mergeOptions(DEFAULT_MOCK_OPTIONS, config.mock)
+      const mergedMockOptions = mergeOptions(mocker.getDefaultOptions(), config.mock)
       if (mergedMockOptions.enabled) {
         config.adapter = mocker.handleRequest.bind(mocker)
       }

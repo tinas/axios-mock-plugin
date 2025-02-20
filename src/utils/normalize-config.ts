@@ -6,7 +6,6 @@ export function isObject(item: any): item is object {
 
 /**
  * Recursively merge two objects.
- * The original `defaultOptions` is not mutated.
  */
 export function mergeObjects<T extends object>(defaultOptions: T, options: Partial<T>): T {
   const result = { ...defaultOptions }

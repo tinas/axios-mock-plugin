@@ -10,7 +10,7 @@ export interface MockOptions {
   errorRate?: number
   headers?: Record<string, string>
   error?: { status?: number; message?: string; details?: unknown[] }
-  getDelay?: (config: AxiosRequestConfigWithMock, endpoint: string) => number
+  getDelay?: (endpoint: string, axiosConfig: AxiosRequestConfigWithMock) => number
   enableLogging?: boolean
 }
 
@@ -20,7 +20,7 @@ export interface InternalMockOptions {
   errorRate: number
   headers: Record<string, string>
   error?: { status?: number; message?: string; details?: unknown[] }
-  getDelay?: (config: AxiosRequestConfigWithMock, endpoint: string) => number
+  getDelay?: (endpoint: string, axiosConfig: AxiosRequestConfigWithMock) => number
   enableLogging: boolean
 }
 

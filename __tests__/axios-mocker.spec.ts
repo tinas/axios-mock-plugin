@@ -379,20 +379,20 @@ describe('AxiosMocker class', () => {
     })
 
     describe('path matching', () => {
-      it('should match endpoint', async () => {
+      it('should match GET endpoint', async () => {
         const config = getDefaultAxiosConfig()
         config.url = '/api/users'
         const axiosMocker = new AxiosMocker({
           endpoints: new Map([
-            ['POST /api/posts', () => Promise.resolve({ data: [] })],
-            ['GET /api/users', () => Promise.resolve({ data: [] })]
+            ['POST /api/posts', () => Promise.resolve({ data: { method: 'POST' } })],
+            ['GET /api/users', () => Promise.resolve({ data: { method: 'GET' } })]
           ])
         })
 
         const response = await axiosMocker.handleRequest(config)
 
         expect(response.status).toEqual(200)
-        expect(response.data).toEqual({ data: [] })
+        expect(response.data).toEqual({ data: { method: 'GET' } })
       })
 
       it('should match endpoint with parameters', async () => {

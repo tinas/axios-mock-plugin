@@ -153,7 +153,7 @@ export class AxiosMocker {
     }
 
     const delay = mergedConfig.getDelay && typeof mergedConfig.getDelay === 'function'
-      ? mergedConfig.getDelay(axiosConfig, matchedKey)
+      ? mergedConfig.getDelay(matchedKey, axiosConfig)
       : mergedConfig.delay
 
     if (delay > 0) {

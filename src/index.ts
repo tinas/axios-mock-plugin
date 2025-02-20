@@ -10,8 +10,7 @@ export {
 } from './types'
 
 export {
-  AxiosMocker,
-  DEFAULT_MOCK_OPTIONS
+  AxiosMocker
 } from './axios-mocker'
 
 export {
