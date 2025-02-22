@@ -1,6 +1,6 @@
 import { AxiosResponse, InternalAxiosRequestConfig } from 'axios'
 
-export interface AxiosRequestConfigWithMock extends InternalAxiosRequestConfig<any> {
+export interface AxiosRequestConfigWithMock<D = any> extends InternalAxiosRequestConfig<D> {
   mock?: boolean | Partial<MockOptions>;
 }
 
@@ -9,7 +9,7 @@ export interface MockOptions {
   delay?: number
   errorRate?: number
   headers?: Record<string, string>
-  error?: { status?: number; message?: string; details?: unknown[] }
+  error?: { status?: number; message?: string; details?: any }
   getDelay?: (endpoint: string, axiosConfig: AxiosRequestConfigWithMock) => number
   enableLogging?: boolean
 }
@@ -19,19 +19,19 @@ export interface InternalMockOptions {
   delay: number
   errorRate: number
   headers: Record<string, string>
-  error?: { status?: number; message?: string; details?: unknown[] }
+  error?: { status?: number; message?: string; details?: any }
   getDelay?: (endpoint: string, axiosConfig: AxiosRequestConfigWithMock) => number
   enableLogging: boolean
 }
 
 export interface MockRequest<
-  Params = Record<string, unknown>,
-  Query = Record<string, unknown>,
-  Body = unknown
+  P = any,
+  Q = any,
+  B = any
 > {
-  params: Params;
-  query: Query;
-  body: Body;
+  params: P;
+  query: Q;
+  body: B;
 }
 
 export interface AxiosMockerConfig {
@@ -40,13 +40,14 @@ export interface AxiosMockerConfig {
 }
 
 export type MockEndpoint<
-  Params = Record<string, unknown>,
-  Query = Record<string, unknown>,
-  Body = unknown
+  R = any,
+  P = any,
+  Q = any,
+  B = any
 > = (
-  request: MockRequest<Params, Query, Body>,
+  request: MockRequest<P, Q, B>,
   axiosConfig: AxiosRequestConfigWithMock
-) => unknown | Promise<unknown>
+) => R | Promise<R>
 
 export type EndpointsMap = Map<string, MockEndpoint> | { [key: string]: MockEndpoint }
 

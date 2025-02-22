@@ -2,6 +2,7 @@ export {
   AxiosRequestConfigWithMock,
   AxiosMockerConfig,
   MockOptions,
+  InternalMockOptions,
   MockRequest,
   MockEndpoint,
   EndpointsMap,

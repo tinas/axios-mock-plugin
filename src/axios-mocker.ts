@@ -76,7 +76,12 @@ export class AxiosMocker {
     this.loadEndpoints(endpoints)
   }
 
-  public addEndpoint(endpoint: string, handler: MockEndpoint): void {
+  public addEndpoint<
+    R = any,
+    P = any,
+    Q = any,
+    B = any
+  >(endpoint: string, handler: MockEndpoint<R, P, Q, B>): void {
     if (isDevelopment() && this.endpoints.has(endpoint))
       createWarning(`Duplicate endpoint: ${endpoint}`)
 
@@ -99,15 +104,19 @@ export class AxiosMocker {
     this.defaultOptions = mergeOptions(this.getDefaultOptions(), options)
   }
 
-  public addRequestHook(hook: (request: MockRequest) => void | Promise<void>): void {
+  public addRequestHook<
+    P = any,
+    Q = any,
+    B = any
+  >(hook: (request: MockRequest<P, Q, B>) => void | Promise<void>): void {
     this.requestHooks.push(hook)
   }
 
-  public addResponseHook(hook: (response: AxiosResponse) => void | Promise<void>): void {
+  public addResponseHook<R = any>(hook: (response: AxiosResponse<R>) => void | Promise<void>): void {
     this.responseHooks.push(hook)
   }
 
-  public async handleRequest(axiosConfig: AxiosRequestConfigWithMock): Promise<AxiosResponse> {
+  public async handleRequest<R = any>(axiosConfig: AxiosRequestConfigWithMock): Promise<AxiosResponse<R>> {
     const mergedConfig = mergeOptions(this.getDefaultOptions(), axiosConfig.mock)
 
     if (!mergedConfig.enabled) {
@@ -180,7 +189,7 @@ export class AxiosMocker {
       await hook(mockRequest, axiosConfig)
     }
 
-    let responseData: unknown
+    let responseData: R
     try {
       const handler = this.endpoints.get(matchedKey)!
       responseData = await handler(mockRequest, axiosConfig)
@@ -189,7 +198,7 @@ export class AxiosMocker {
       createError(`Handler for ${matchedKey} failed: ${errorMessage}`)
     }
 
-    const response: AxiosResponse = {
+    const response: AxiosResponse<R> = {
       data: responseData,
       status: 200,
       statusText: 'OK',

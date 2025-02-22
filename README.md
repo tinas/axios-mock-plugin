@@ -375,12 +375,17 @@ addEndpoints(endpoints: EndpointsMap): void
 Adds a single endpoint with its corresponding handler.
 
 ```typescript
-addEndpoint(endpoint: string, handler: MockEndpoint): void
+addEndpoint<R = any, P = any, Q = any, B = any>(endpoint: string, handler: MockEndpoint<R, P, Q, B>): void
 ```
 
 - Parameters:
   - `endpoints`: *(string)*: The endpoint pattern (e.g., `"GET /users/:id"`).
-  - `handler`: *(MockEndpoint)*: The function that handles the mock request.
+  - `handler`: *(MockEndpoint<R, P, Q, B>)*: The function that handles the mock request. The generic type parameters represent:
+    - **R**: The return type of the endpoint handler.
+    - **P**: The type of URL parameters.
+    - **Q**: The type of query parameters.
+    - **B**: The type of the request body.
+
 
 
 #### removeEndpoint
@@ -432,34 +437,41 @@ updateDefaultOptions(options: Partial<MockOptions>): void
 Adds a request hook that is executed before the endpoint handler is invoked. Hooks can perform additional processing or modifications on the mock request.
 
 ```typescript
-addRequestHook(hook: (request: MockRequest) => void | Promise<void>): void
+addRequestHook<P = any, Q = any, B = any>(hook: (request: MockRequest<P, Q, B>) => void | Promise<void>): void
 ```
 
 - Parameters:
-  - `hook`: *(function)*: A function that receives the `MockRequest` object and optionally returns a promise.
+  - `hook`: *(function)*: A function that takes a MockRequest<P, Q, B>, where:
+    - **P**: The type of URL parameters.
+    - **Q**: The type of query parameters.
+    - **B**: The type of the request body.
+    <br>The function can return either `void` or a `Promise<void>`.
 
 #### addResponseHook
 Adds a response hook that is executed after the endpoint handler returns a response. Hooks can perform additional processing or logging of the response.
 
 ```typescript
-addResponseHook(hook: (response: AxiosResponse) => void | Promise<void>): void
+addResponseHook<R = any>(hook: (response: AxiosResponse<R>) => void | Promise<void>): void
 ```
 
 - Parameters:
-  - `hook`: *(function)*: A function that receives the Axios response object and optionally returns a promise.
+  - `hook`: *(function)*: A function that takes an `AxiosResponse<R>`.
+    - **R**: The type of the response data.
+    <br>The function can return either `void` or a `Promise<void>`.
 
 #### handleRequest
 Processes an Axios request using the registered mock endpoints and the configured options.
 This method handles merging of query parameters (from URL and `axiosConfig.params`), simulates delays, applies error logic, and invokes request/response hooks.
 
 ```typescript
-handleRequest(axiosConfig: AxiosRequestConfigWithMock): Promise<AxiosResponse>
+handleRequest<R = any>(axiosConfig: AxiosRequestConfigWithMock): Promise<AxiosResponse<R>>
 ```
 
 - Parameters:
   - `axiosConfig`: *(AxiosRequestConfigWithMock)*: The Axios request configuration containing optional mock settings.
 - Returns:
-  - `Promise<AxiosResponse>`: A promise that resolves with a mocked Axios response.
+  - `Promise<AxiosResponse<R>>`: A promise that resolves with a mocked Axios response.
+    - **R** represents the type of the response data, allowing you to specify the expected structure of the response.
 
 
 ### Additional API Functions
@@ -505,14 +517,14 @@ detachMockInterceptor(
 The request object passed to endpoint handlers:
 
 ```typescript
-interface MockRequest<
-  Params = Record<string, unknown>,
-  Query = Record<string, unknown>,
-  Body = unknown
+export interface MockRequest<
+  P = any,
+  Q = any,
+  B = any
 > {
-  params: Params
-  query: Query
-  body: Body
+  params: P;
+  query: Q;
+  body: B;
 }
 ```
 
@@ -520,14 +532,15 @@ interface MockRequest<
 The endpoint handler function type:
 
 ```typescript
-type MockEndpoint<
-  Params = Record<string, unknown>,
-  Query = Record<string, unknown>,
-  Body = unknown
+export type MockEndpoint<
+  R = any,
+  P = any,
+  Q = any,
+  B = any
 > = (
-  request: MockRequest<Params, Query, Body>,
+  request: MockRequest<P, Q, B>,
   axiosConfig: AxiosRequestConfigWithMock
-) => unknown | Promise<unknown>
+) => R | Promise<R>
 ```
 
 ### Hooks

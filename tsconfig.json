@@ -11,5 +11,9 @@
     "skipLibCheck": true,
     "types": ["vitest/globals"]
   },
-  "include": ["src/**/*", "__tests__"]
+  "include": [
+    "src/**/*",
+    "__tests__",
+    "axios-mock-plugin.d.ts"
+  ],
 }
