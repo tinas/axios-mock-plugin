@@ -8,9 +8,8 @@ export default defineConfig({
       exclude: [
         ...coverageConfigDefaults.exclude,
         'src/index.ts',
-        'src/types.ts',
-        'src/axios-mock-plugin.d.ts'
-      ],
+        'src/types.ts'
+      ]
     }
-  },
+  }
 })

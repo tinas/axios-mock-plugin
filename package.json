@@ -1,7 +1,7 @@
 {
   "name": "axios-mock-plugin",
   "type": "module",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "description": "Promise based mock adapter for axios.",
   "keywords": [
     "axios",
@@ -25,18 +25,14 @@
     "clean": "rimraf dist coverage",
     "prebuild": "npm run clean",
     "build:dev": "cross-env NODE_ENV=development rollup -c",
-    "build:prod": "cross-env NODE_ENV=production rollup -c",
+    "build:prod": "cross-env NODE_ENV=production rollup -c && rimraf dist/types",
     "test": "vitest",
     "test:coverage": "vitest --coverage",
     "lint": "eslint src",
     "lint:fix": "eslint src --fix",
     "prepublishOnly": "npm run test && npm run lint && npm run build:prod"
   },
-  "author": {
-    "name": "Ahmet Tinastepe",
-    "email": "ahmttnstpe@gmail.com",
-    "url": "https://github.com/tinas"
-  },
+  "author": "Ahmet Tinastepe <ahmttnstpe@gmail.com>",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/tinas/axios-mock-plugin/issues"
@@ -61,6 +57,7 @@
     "eslint-plugin-unicorn": "^56.0.1",
     "rimraf": "^6.0.1",
     "rollup": "^4.34.6",
+    "rollup-plugin-dts": "^6.1.1",
     "typescript-eslint": "^8.20.0",
     "vitest": "^3.0.5"
   },
